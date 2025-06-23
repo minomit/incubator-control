@@ -1,6 +1,6 @@
 use chrono::{Duration, NaiveDate, Utc};
 use eframe::{egui, App, Frame};
-use egui::{CentralPanel, Color32, Context, RichText, Stroke, TextEdit};
+use egui::{CentralPanel, Color32, Context, RichText, Rgba, Stroke, TextEdit, TopBottomPanel};
 use rusqlite::{Connection, Result, ToSql};
 use serde::{Deserialize, Serialize};
 
@@ -31,6 +31,7 @@ impl std::fmt::Display for Species {
 pub struct Batch {
     species: Species,
     description: String,
+    egg_count: u32,
 }
 
 #[derive(Clone)]
@@ -61,6 +62,7 @@ impl IncubationSession {
 pub struct IncubatorApp {
     sessions: Vec<IncubationSession>,
     show_new_session_window: bool,
+    show_about_window: bool,
     new_session_name: String,
     new_session_batches: Vec<Batch>,
 }
@@ -73,13 +75,15 @@ impl IncubatorApp {
         Self {
             sessions: load_sessions(&conn).expect("Caricamento sessioni fallito"),
             show_new_session_window: false,
+            show_about_window: false,
             new_session_name: String::new(),
             new_session_batches: vec![],
         }
     }
 
     fn add_session(&mut self) {
-        if !self.new_session_name.is_empty() && !self.new_session_batches.is_empty() {
+        let all_batches_valid = self.new_session_batches.iter().all(|b| b.egg_count > 0);
+        if !self.new_session_name.is_empty() && !self.new_session_batches.is_empty() && all_batches_valid {
             let session = IncubationSession {
                 id: 0,
                 name: self.new_session_name.clone(),
@@ -99,6 +103,41 @@ impl IncubatorApp {
 
 impl App for IncubatorApp {
     fn update(&mut self, ctx: &Context, _frame: &mut Frame) {
+        if self.show_about_window {
+            let mut is_open = self.show_about_window;
+            
+            egui::Window::new("Informazioni")
+                .collapsible(false)
+                .resizable(false)
+                .open(&mut is_open)
+                .show(ctx, |ui| {
+                    ui.vertical_centered(|ui| {
+                        ui.heading(env!("CARGO_PKG_NAME"));
+                        ui.label(format!("Versione: {}", env!("CARGO_PKG_VERSION")));
+                        ui.label(format!("Autore: {}", env!("CARGO_PKG_AUTHORS")));
+                        
+                        // --- MODIFICA: Aggiunto link alla licenza ---
+                        let license = env!("CARGO_PKG_LICENSE");
+                        ui.hyperlink_to(
+                            format!("Licenza: {}", license),
+                            format!("https://spdx.org/licenses/{}.html", license)
+                        );
+                        
+                        ui.add_space(10.0);
+                        ui.hyperlink_to("Visita il codice sorgente su GitHub", "https://github.com/tuo-utente/tuo-progetto"); // CAMBIA QUESTO LINK!
+                        ui.add_space(10.0);
+                        
+                        if ui.button("Chiudi").clicked() {
+                            self.show_about_window = false;
+                        }
+                    });
+                });
+            
+            if !is_open {
+                self.show_about_window = false;
+            }
+        }
+        
         if self.show_new_session_window {
             egui::Window::new("Crea Nuova Incubata Mista")
                 .collapsible(false)
@@ -113,6 +152,7 @@ impl App for IncubatorApp {
                        self.new_session_batches.push(Batch {
                            species: Species::Gallina,
                            description: String::new(),
+                           egg_count: 1,
                        });
                     }
 
@@ -128,6 +168,11 @@ impl App for IncubatorApp {
                                     ui.selectable_value(&mut batch.species, Species::Oca, "Oca");
                                 });
                             
+                            let egg_count_widget = egui::DragValue::new(&mut batch.egg_count)
+                                .clamp_range(1..=200)
+                                .suffix(" uova");
+                            ui.add(egg_count_widget);
+
                             let text_edit_widget = TextEdit::singleline(&mut batch.description)
                                 .hint_text("Descrizione (es. Marans)");
                             ui.add(text_edit_widget);
@@ -143,7 +188,7 @@ impl App for IncubatorApp {
 
                     ui.add_space(5.0);
                     if ui.button("+ Aggiungi un altro lotto").clicked() {
-                        self.new_session_batches.push(Batch { species: Species::Gallina, description: String::new() });
+                        self.new_session_batches.push(Batch { species: Species::Gallina, description: String::new(), egg_count: 1 });
                     }
                     
                     ui.separator();
@@ -157,6 +202,16 @@ impl App for IncubatorApp {
                     });
                 });
         }
+
+        TopBottomPanel::bottom("footer")
+            .show(ctx, |ui| {
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if ui.button("Info").clicked() {
+                        self.show_about_window = true;
+                    }
+                    ui.separator();
+                });
+            });
         
         CentralPanel::default().show(ctx, |ui| {
             ui.horizontal(|ui| {
@@ -178,6 +233,11 @@ impl App for IncubatorApp {
                     let current_day = session.current_session_day();
                     let progress = if max_days > 0 { (current_day as f32) / (max_days as f32) } else { 0.0 };
 
+                    let is_action_day = session.batches.iter().any(|b| {
+                        let day_to_add = max_days - b.species.incubation_days() + 1;
+                        current_day == day_to_add
+                    });
+
                     let frame = egui::Frame::group(ui.style()).stroke(Stroke::new(1.0, Color32::GRAY));
                     frame.show(ui, |ui| {
                         ui.horizontal(|ui| {
@@ -193,7 +253,33 @@ impl App for IncubatorApp {
                             session.final_hatch_date().format("%d/%m/%Y")));
                         
                         ui.add_space(5.0);
-                        ui.label(format!("Stato: Giorno {} di {}", current_day.max(0), max_days));
+                        
+                        if is_action_day {
+                            ui.horizontal(|ui| {
+                                ui.label("Stato: Giorno ");
+                                
+                                let time = ctx.input(|i| i.time);
+                                let blink_speed = 2.0;
+                                let pulse = ( (time * blink_speed).sin() + 1.0 ) / 2.0; 
+                                let blink_color = Color32::from_rgb(255, 130, 0); 
+                                let default_color = ui.style().visuals.text_color();
+                                
+                                let start_rgba = Rgba::from(default_color);
+                                let end_rgba = Rgba::from(blink_color);
+                                let animated_rgba = egui::lerp(start_rgba..=end_rgba, pulse as f32);
+
+                                ui.label(
+                                    RichText::new(current_day.max(0).to_string())
+                                        .color(Color32::from(animated_rgba))
+                                        .strong()
+                                        .size(16.0)
+                                );
+                                ui.label(format!(" di {}", max_days));
+                            });
+                        } else {
+                            ui.label(format!("Stato: Giorno {} di {}", current_day.max(0), max_days));
+                        }
+                        
                         ui.add(egui::ProgressBar::new(progress.clamp(0.0, 1.0)).show_percentage());
                         ui.add_space(10.0);
 
@@ -204,13 +290,13 @@ impl App for IncubatorApp {
                             let text: RichText;
                             
                             if current_day == day_to_add {
-                                text = RichText::new(format!("➡️ OGGI: Inserisci le uova di {} ({})", batch.species, batch.description))
+                                text = RichText::new(format!("➡️ OGGI: Inserisci {} uova di {} ({})", batch.egg_count, batch.species, batch.description))
                                     .color(Color32::GREEN).strong().size(16.0);
                             } else if current_day < day_to_add {
-                                text = RichText::new(format!("⏳ Inserisci le uova di {} ({}) al giorno {}", batch.species, batch.description, day_to_add))
+                                text = RichText::new(format!("⏳ Inserisci {} uova di {} ({}) al giorno {}", batch.egg_count, batch.species, batch.description, day_to_add))
                                     .color(Color32::GRAY);
                             } else {
-                                text = RichText::new(format!("✅ Uova di {} ({}) inserite", batch.species, batch.description))
+                                text = RichText::new(format!("✅ {} uova di {} ({}) inserite", batch.egg_count, batch.species, batch.description))
                                     .color(Color32::from_rgb(100, 150, 100));
                             }
                             ui.label(text);
@@ -266,7 +352,10 @@ fn load_sessions(conn: &Connection) -> Result<Vec<IncubationSession>> {
     let mut stmt = conn.prepare("SELECT id, name, start_date, batches FROM sessions ORDER BY start_date DESC")?;
     let session_iter = stmt.query_map([], |row| {
         let batches_json: String = row.get(3)?;
-        let batches: Vec<Batch> = serde_json::from_str(&batches_json).unwrap_or_else(|_| vec![]);
+        let batches: Vec<Batch> = serde_json::from_str(&batches_json).unwrap_or_else(|e| {
+            eprintln!("Errore deserializzando i lotti: {}. JSON: {}", e, batches_json);
+            vec![]
+        });
         
         Ok(IncubationSession {
             id: row.get(0)?,
