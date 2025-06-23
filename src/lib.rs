@@ -23,8 +23,8 @@ impl std::fmt::Display for Language {
 }
 
 #[derive(Serialize, Deserialize)]
-struct Settings {
-    language: Language,
+pub struct Settings {
+    pub language: Language,
 }
 
 impl Default for Settings {
@@ -151,7 +151,7 @@ impl IncubatorApp {
     fn new() -> Self {
         let conn = open_db_connection();
         init_db(&conn).expect("Creazione DB fallita");
-        let settings = Settings::default();
+        let settings: Settings = confy::load(APP_NAME, None).unwrap_or_default();
         let localization = Localization::new(settings.language);
         Self {
             sessions: load_sessions(&conn).expect("Caricamento sessioni fallito"),
@@ -185,6 +185,7 @@ impl IncubatorApp {
     fn change_language(&mut self, lang: Language) {
         self.settings.language = lang;
         self.localization = Localization::new(lang);
+        confy::store(APP_NAME, None, &self.settings).expect("Impossibile salvare le impostazioni");
     }
 }
 
