@@ -1,10 +1,11 @@
 <!DOCTYPE html>
+<!-- L'attributo lang verrà cambiato dinamicamente da JavaScript -->
 <html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- CAMBIA IL TITOLO -->
-    <title>Gestore Incubate - La Tua App per l'Incubazione</title>
+    <!-- Il titolo verrà cambiato dinamicamente -->
+    <title data-key="page-title">Gestore Incubate - La Tua App per l'Incubazione</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,47 +14,53 @@
 <body>
     <div class="container">
         <header>
-            <!-- CAMBIA IL NOME E IL SOTTOTITOLO -->
-            <h1>🐣 Gestore Incubate Miste</h1>
-            <p class="subtitle">La soluzione semplice per gestire incubate con specie e tempi diversi.</p>
+            <!-- Selettore della lingua -->
+            <div class="language-switcher">
+                <a href="#" onclick="setLanguage('it'); return false;">Italiano</a> |
+                <a href="#" onclick="setLanguage('en'); return false;">English</a>
+            </div>
+
+            <h1 data-key="main-title">🐣 Gestore Incubate Miste</h1>
+            <p class="subtitle" data-key="subtitle">La soluzione semplice per gestire incubate con specie e tempi diversi.</p>
         </header>
 
         <main>
             <section class="screenshot">
-                <!-- METTI UNO SCREENSHOT DELLA TUA APP QUI -->
-                <img src="screenshot.png" alt="Screenshot dell'applicazione Gestore Incubate">
+                <!-- Lo screenshot non ha bisogno di traduzione, ma l'attributo 'alt' sì -->
+                <img src="screenshot.png" alt="Screenshot dell'applicazione Gestore Incubate" data-key="screenshot-alt">
             </section>
 
             <section class="description">
-                <h2>Cos'è?</h2>
-                <p>
+                <h2 data-key="what-is-it-title">Cos'è?</h2>
+                <p data-key="what-is-it-p">
                     Questa applicazione ti aiuta a gestire le tue incubate, specialmente quando hai uova di specie diverse (galline, anatre, oche, quaglie) che richiedono tempi di incubazione differenti. L'app ti dice esattamente quando inserire ogni lotto di uova per farle schiudere tutte insieme!
                 </p>
             </section>
 
             <section class="features">
-                <h2>Funzionalità Principali</h2>
+                <h2 data-key="features-title">Funzionalità Principali</h2>
                 <ul>
-                    <li>✅ Gestione di incubate miste con più specie.</li>
-                    <li>✅ Calcolo automatico del giorno di inserimento per ogni lotto.</li>
-                    <li>✅ Interfaccia semplice e intuitiva in Italiano e Inglese.</li>
-                    <li>✅ Barra di progresso per vedere a che punto è l'incubata.</li>
-                    <li>✅ Promemoria visivi per i giorni di azione.</li>
+                    <li data-key="feature-1">✅ Gestione di incubate miste con più specie.</li>
+                    <li data-key="feature-2">✅ Calcolo automatico del giorno di inserimento per ogni lotto.</li>
+                    <li data-key="feature-3">✅ Interfaccia semplice e intuitiva in Italiano e Inglese.</li>
+                    <li data-key="feature-4">✅ Barra di progresso per vedere a che punto è l'incubata.</li>
+                    <li data-key="feature-5">✅ Promemoria visivi per i giorni di azione.</li>
                 </ul>
             </section>
 
             <section class="download">
-                <h2>Download</h2>
-                <p>Scarica l'ultima versione per il tuo sistema operativo.</p>
-                <!-- CAMBIA QUESTI LINK QUANDO AVRAI I FILE DI RILASCIO -->
-                <a href="https://github.com/minomitrugno/incubator-control/releases" class="button">Vai alla pagina dei Rilasci</a>
+                <h2 data-key="download-title">Download</h2>
+                <p data-key="download-p">Scarica l'ultima versione per il tuo sistema operativo.</p>
+                <a href="https://github.com/minomitrugno/incubator-control/releases" class="button" data-key="download-button">Vai alla pagina dei Rilasci</a>
             </section>
         </main>
 
         <footer>
-            <!-- L'ANNO E L'AUTORE SONO GIÀ CORRETTI -->
-            <p>© 2024 minomitrugno - Rilasciato sotto licenza MIT</p>
+            <p data-key="footer-text">© 2024 minomitrugno - Rilasciato sotto licenza MIT</p>
         </footer>
     </div>
+
+    <!-- Includiamo il nostro nuovo script JavaScript -->
+    <script src="language.js"></script>
 </body>
 </html>

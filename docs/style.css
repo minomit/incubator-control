@@ -82,3 +82,20 @@ footer {
     font-size: 0.9em;
     color: #777;
 }
+
+/* Stile per il selettore della lingua */
+.language-switcher {
+    text-align: right;
+    margin-bottom: 15px;
+    font-size: 0.9em;
+}
+
+.language-switcher a {
+    color: #007bff; /* Un colore blu, cambialo se preferisci */
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.language-switcher a:hover {
+    text-decoration: underline;
+}
