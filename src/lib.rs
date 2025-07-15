@@ -262,7 +262,7 @@ impl App for IncubatorApp {
                 .resizable(false)
                 .show(ctx, |ui| {
                     ui.label(format!("{}: 1.0.0", &self.localization.version_label));
-                    ui.label(format!("{}: MIT", &self.localization.license_label));
+                    ui.label(format!("{}: {}", &self.localization.license_label, env!("CARGO_PKG_LICENSE")));
                     ui.label(format!("{}: minomitrugno", &self.localization.author_label));
                     ui.hyperlink_to(&self.localization.source_code_link, "https://github.com/minomitrugno/incubator-control");
                     if ui.button(&self.localization.close_button).clicked() {

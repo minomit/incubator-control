@@ -3,7 +3,7 @@ name = "gestore_incubatrice_gui"
 version = "1.0.0"
 edition = "2021"
 description = "Gestione incubata di uova"
-license = "MIT"
+license = "GPL-3.0-or-later"
 authors = ["Mino Mitrugno <mino.mitrugno@unisalento.it>"]
 
 [features]
