@@ -1351,6 +1351,7 @@ dependencies = [
  "chrono",
  "confy",
  "eframe",
+ "home",
  "rusqlite",
  "serde",
  "serde_json",
